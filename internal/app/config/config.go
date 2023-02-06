@@ -1,4 +1,4 @@
-package app
+package config
 
 import (
 	"github.com/kelseyhightower/envconfig"
@@ -18,8 +18,9 @@ type LoggerConfig struct {
 func Parse() (*Config, error) {
 	cfg := Config{}
 	logger := LoggerConfig{}
+	project := "kanji_project_name"
 
-	err := envconfig.Process("kanji_auth", &logger)
+	err := envconfig.Process(project, &logger)
 	if err != nil {
 		log.Err(err).Msg("logger config error")
 		return nil, err

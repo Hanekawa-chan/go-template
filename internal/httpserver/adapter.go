@@ -13,33 +13,29 @@ import (
 
 type adapter struct {
 	logger  *zerolog.Logger
-	config  *app.Config
+	config  *Config
 	server  *http.Server
 	service app.Service
 	limiter ratelimit.Limiter
 }
 
-func NewAdapter(logger *zerolog.Logger, config *app.Config, service app.Service) app.HTTPServer {
+func NewAdapter(logger *zerolog.Logger, config *Config, service app.Service) app.HTTPServer {
 	a := &adapter{
 		logger:  logger,
 		config:  config,
 		service: service,
-		limiter: ratelimit.New(config.HTTPServer.RateLimit),
+		limiter: ratelimit.New(config.RateLimit),
 	}
 
 	r := chi.NewRouter()
 
 	a.initMiddlewares(r)
 
-	r.Group(func(r chi.Router) {
-		r.Use(a.authMiddleware)
-	})
-
 	r.Handle("/metrics", promhttp.Handler())
 	r.MethodFunc(http.MethodGet, "/health-check", a.HealthCheck)
 
 	a.server = &http.Server{
-		Addr:    config.HTTPServer.Address,
+		Addr:    config.Address,
 		Handler: r,
 	}
 
@@ -47,7 +43,7 @@ func NewAdapter(logger *zerolog.Logger, config *app.Config, service app.Service)
 }
 
 func (a *adapter) ListenAndServe() error {
-	a.logger.Info().Msgf("Listening and serving HTTP requests on: %v", a.config.HTTPServer.Address)
+	a.logger.Info().Msgf("Listening and serving HTTP requests on: %v", a.config.Address)
 
 	if err := a.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		a.logger.Error().Err(err).Msg("Error listening and serving HTTP requests.")

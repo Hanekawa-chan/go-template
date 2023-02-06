@@ -8,7 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"project-name/internal/app"
-	"project-name/internal/database"
+	"project-name/internal/app/config"
 	"project-name/internal/httpserver"
 	"project-name/internal/version"
 	"syscall"
@@ -20,7 +20,7 @@ func main() {
 	log.Println("Loading Mailing - v", version.Version, "| Commit:", version.Commit)
 
 	// Parse all configs form env
-	cfg, err := app.Parse()
+	cfg, err := config.Parse()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -35,13 +35,8 @@ func main() {
 
 	zl := &logger
 
-	_, err = database.NewAdapter(zl, cfg)
-	if err != nil {
-		zl.Fatal().Err(err).Msg("Database init")
-	}
-
 	service := app.NewService(zl, cfg)
-	httpServerAdapter := httpserver.NewAdapter(zl, cfg, service)
+	httpServerAdapter := httpserver.NewAdapter(zl, cfg.HTTPServer, service)
 
 	// Channels for errors and os signals
 	stop := make(chan error, 1)
